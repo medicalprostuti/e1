@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "What kind of noun is 'discipline'?",
+          options: {
+            a: "Common noun",
+            b: "Abstract noun",
+            c: "Collective noun",
+            d: "Proper noun",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Discipline</b> একটি Abstract noun। Abstract noun হলো এমন একটি noun যা কোনো ধারণা, গুণ, অবস্থা বা অনুভূতিকে বোঝায়, যা আমরা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করতে পারি না। অর্থাৎ, এটি দেখা, স্পর্শ করা, শোনা, গন্ধ নেওয়া বা স্বাদ নেওয়া যায় না।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। যেমন: 'boy', 'city', 'book' ইত্যাদি। 'Discipline' কোনো সাধারণ ব্যক্তি বা বস্তুর নাম নয়।</li><li><b>(B) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Discipline' একটি গুণ বা ধারণাকে বোঝায় (যেমন: নিয়ম মানা, আত্মনিয়ন্ত্রণ)। তাই এটি Abstract noun।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। যেমন: 'team', 'family', 'flock' ইত্যাদি। 'Discipline' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(D) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। এটি সবসময় বড় হাতের অক্ষর দিয়ে শুরু হয়। যেমন: 'Dhaka', 'Rina', 'Bangladesh' ইত্যাদি। 'Discipline' কোনো নির্দিষ্ট নাম নয়।</li></ul>",
+        },
+        {
+          id: 2,
+          question:
+            "\"Wisdom is better than strength\". Here 'strength' is used as",
+          options: {
+            a: "Proper noun",
+            b: "Common noun",
+            c: "Collective noun",
+            d: "Abstract noun",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Strength</b> একটি Abstract noun। Abstract noun হলো এমন একটি noun যা কোনো ধারণা, গুণ, অবস্থা বা অনুভূতিকে বোঝায়, যা আমরা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করতে পারি না।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। এটি সবসময় বড় হাতের অক্ষর দিয়ে শুরু হয়। 'Strength' কোনো নির্দিষ্ট নাম নয়।</li><li><b>(B) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। 'Strength' কোনো সাধারণ ব্যক্তি বা বস্তুর নাম নয়।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'Strength' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(D) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Strength' একটি গুণ বা ক্ষমতাকে বোঝায় যা দেখা বা স্পর্শ করা যায় না। তাই এটি Abstract noun।</li></ul>",
+        },
+        {
+          id: 3,
+          question: "Which of the following is a countable noun?",
+          options: {
+            a: "furniture",
+            b: "news",
+            c: "money",
+            d: "headache",
+          },
+          correct: "d",
+          explanation:
+            "<p>Countable noun হলো সেই noun যা গণনা করা যায় এবং যার একবচন ও বহুবচন রূপ আছে।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Furniture:</b> 'Furniture' একটি Uncountable noun। আমরা 'a piece of furniture' বা 'items of furniture' বলতে পারি, কিন্তু সরাসরি 'furnitures' বলতে পারি না। এটি একটি সমষ্টিবাচক শব্দ যা বিভিন্ন আসবাবপত্রকে বোঝায়।</li><li><b>(B) News:</b> 'News' একটি Uncountable noun। যদিও এর শেষে 's' আছে, এটি singular অর্থ প্রকাশ করে এবং একে গণনা করা যায় না।</li><li><b>(C) Money:</b> 'Money' একটি Uncountable noun। আমরা 'coins' বা 'notes' গণনা করতে পারি, কিন্তু 'money' নিজে গণনা করা যায় না।</li><li><b>(D) Headache:</b> 'Headache' একটি Countable noun। আমরা 'one headache', 'two headaches' ইত্যাদি বলতে পারি। এটি গণনা করা যায়।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "The man is carrying a ____ of cement.",
+          options: {
+            a: "sack",
+            b: "mouthful",
+            c: "reel",
+            d: "bunch",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে সঠিক শব্দটি হবে 'sack'। 'Sack' অর্থ বস্তা। সিমেন্ট সাধারণত বস্তায় ভরে বহন করা হয়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Sack:</b> 'Sack' মানে বস্তা। সিমেন্ট বস্তায় রাখা হয়, তাই 'a sack of cement' একটি সঠিক collocation।</li><li><b>(B) Mouthful:</b> 'Mouthful' মানে এক মুখ ভরা। এটি সাধারণত খাবার বা তরল পদার্থের ক্ষেত্রে ব্যবহৃত হয়। যেমন: 'a mouthful of food'।</li><li><b>(C) Reel:</b> 'Reel' মানে রিল বা চাকা। এটি সাধারণত সুতা, ফিল্ম বা তারের ক্ষেত্রে ব্যবহৃত হয়। যেমন: 'a reel of film'।</li><li><b>(D) Bunch:</b> 'Bunch' মানে গুচ্ছ বা থোকা। এটি সাধারণত ফল, ফুল বা চাবির ক্ষেত্রে ব্যবহৃত হয়। যেমন: 'a bunch of grapes'।</li></ul>",
+        },
+        {
+          id: 5,
+          question:
+            "'Forgiveness is a great virtue'. Which class of noun 'forgiveness' belongs to?",
+          options: {
+            a: "Collective",
+            b: "Common",
+            c: "Material",
+            d: "Abstract",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Forgiveness</b> একটি Abstract noun। Abstract noun হলো এমন একটি noun যা কোনো ধারণা, গুণ, অবস্থা বা অনুভূতিকে বোঝায়, যা আমরা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করতে পারি না।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'Forgiveness' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(B) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। 'Forgiveness' কোনো সাধারণ ব্যক্তি বা বস্তুর নাম নয়।</li><li><b>(C) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। যেমন: 'gold', 'water', 'wood' ইত্যাদি। 'Forgiveness' কোনো পদার্থ বা উপাদান নয়।</li><li><b>(D) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Forgiveness' একটি গুণ বা ধারণাকে বোঝায় (যেমন: ক্ষমা করা)। তাই এটি Abstract noun।</li></ul>",
+        },
+        {
+          id: 6,
+          question: "What kind of noun is 'river'?",
+          options: {
+            a: "Material",
+            b: "Collective",
+            c: "Proper",
+            d: "Common",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>River</b> একটি Common noun। Common noun হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। 'River' কোনো পদার্থ বা উপাদান নয়, বরং একটি স্থানের প্রকার।</li><li><b>(B) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'River' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(C) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। এটি সবসময় বড় হাতের অক্ষর দিয়ে শুরু হয়। যেমন: 'Padma River', 'Amazon River' ইত্যাদি। যদি শুধু 'river' বলা হয়, তবে সেটি নির্দিষ্ট কোনো নদীকে বোঝায় না।</li><li><b>(D) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের বস্তু বা স্থানকে বোঝায়। 'River' শব্দটি যেকোনো নদীকে সাধারণভাবে বোঝাতে ব্যবহৃত হয়। তাই এটি Common noun।</li></ul>",
+        },
+        {
+          id: 7,
+          question:
+            "'A herd of cattle is passing' The underlined word is a/an-",
+          options: {
+            a: "adverb",
+            b: "adjective",
+            c: "collective noun",
+            d: "abstract noun",
+          },
+          correct: "c",
+          explanation:
+            "<p>বাক্যে আন্ডারলাইন করা শব্দ 'herd' একটি Collective noun। Collective noun হলো এমন noun যা একই শ্রেণীর ব্যক্তি বা বস্তুর সমষ্টিকে বোঝায়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Adverb:</b> Adverb হলো একটি শব্দ যা একটি verb, adjective, বা অন্য একটি adverb-কে modify করে। 'Herd' কোনো কাজ, গুণ বা অন্য adverb-কে modify করে না।</li><li><b>(B) Adjective:</b> Adjective হলো একটি শব্দ যা noun বা pronoun-কে modify করে। 'Herd' কোনো noun বা pronoun-কে modify করে না, বরং নিজেই একটি noun।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'Herd' বলতে একদল পশু (বিশেষত গরু) কে বোঝায়। তাই এটি Collective noun।</li><li><b>(D) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Herd' একটি সমষ্টিকে বোঝায়, কোনো গুণ বা ধারণাকে নয়।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "Mutton is a/an",
+          options: {
+            a: "Common noun",
+            b: "Abstract noun",
+            c: "Material noun",
+            d: "Proper noun",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Mutton</b> একটি Material noun। Material noun হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয় বা যা সরাসরি গণনা করা যায় না।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। 'Mutton' কোনো সাধারণ প্রাণী বা বস্তুর নাম নয়, এটি একটি খাদ্যদ্রব্য।</li><li><b>(B) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Mutton' একটি শারীরিক অস্তিত্বসম্পন্ন খাদ্যবস্তু।</li><li><b>(C) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয় বা যা সরাসরি গণনা করা যায় না। 'Mutton' হলো ভেড়ার মাংস, যা একটি খাদ্য উপাদান এবং একে এককভাবে গণনা করা যায় না। তাই এটি Material noun।</li><li><b>(D) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। এটি সবসময় বড় হাতের অক্ষর দিয়ে শুরু হয়। 'Mutton' কোনো নির্দিষ্ট নাম নয়।</li></ul>",
+        },
+        {
+          id: 9,
+          question: 'What kind of noun is "Girl"?',
+          options: {
+            a: "Proper",
+            b: "Common",
+            c: "Collective",
+            d: "Material",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Girl</b> একটি Common noun। Common noun হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। যেমন: 'Rina', 'Maria' ইত্যাদি। 'Girl' নির্দিষ্ট কোনো মেয়ের নাম নয়।</li><li><b>(B) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তিকে বোঝায়। 'Girl' শব্দটি যেকোনো মেয়েকে সাধারণভাবে বোঝাতে ব্যবহৃত হয়। তাই এটি Common noun।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'Girl' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(D) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। 'Girl' কোনো পদার্থ বা উপাদান নয়।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "What kind of noun is 'Cattle'?",
+          options: {
+            a: "Proper",
+            b: "Common",
+            c: "Collective",
+            d: "Material",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Cattle</b> একটি Collective noun। Collective noun হলো এমন noun যা একই শ্রেণীর ব্যক্তি বা বস্তুর সমষ্টিকে বোঝায়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। 'Cattle' নির্দিষ্ট কোনো প্রাণীর নাম নয়।</li><li><b>(B) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। যদিও 'cow' বা 'bull' কমন নাউন, 'cattle' তাদের সমষ্টিকে বোঝায়।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল পশু (বিশেষত গরু) কে বোঝায়। 'Cattle' শব্দটি নিজেই বহুবচন এবং এটি একদল পশুকে নির্দেশ করে। তাই এটি Collective noun।</li><li><b>(D) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। 'Cattle' কোনো পদার্থ বা উপাদান নয়।</li></ul>",
+        },
+        {
+          id: 11,
+          question:
+            "The necklace is made of gold. What kind of noun is the word 'gold'?",
+          options: {
+            a: "proper noun",
+            b: "abstract noun",
+            c: "collective noun",
+            d: "material noun",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Gold</b> একটি Material noun। Material noun হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয় বা যা সরাসরি গণনা করা যায় না।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। 'Gold' কোনো নির্দিষ্ট নাম নয়।</li><li><b>(B) Abstract noun:</b> Abstract noun হলো এমন গুণ বা ধারণার নাম যা শারীরিক অস্তিত্ব নেই। 'Gold' একটি ভৌত পদার্থ।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল ব্যক্তি বা বস্তুকে একসাথে বোঝাতে ব্যবহৃত হয়। 'Gold' কোনো সমষ্টিকে বোঝায় না।</li><li><b>(D) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। 'Gold' একটি ধাতু যা থেকে অলংকার তৈরি হয়। তাই এটি Material noun।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "What kind of Noun is 'Class'?",
+          options: {
+            a: "Common",
+            b: "Proper",
+            c: "Collective",
+            d: "Material",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Class</b> একটি Collective noun। Collective noun হলো এমন noun যা একই শ্রেণীর ব্যক্তি বা বস্তুর সমষ্টিকে বোঝায়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Common noun:</b> কমন নাউন হলো সাধারণ নাম যা একই প্রকারের ব্যক্তি, বস্তু, স্থান বা ধারণাকে বোঝায়। যদিও 'student' একটি Common noun, 'class' তাদের সমষ্টিকে বোঝায়।</li><li><b>(B) Proper noun:</b> প্রপার নাউন হলো কোনো নির্দিষ্ট ব্যক্তি, স্থান বা বস্তুর নাম। 'Class' কোনো নির্দিষ্ট নাম নয়।</li><li><b>(C) Collective noun:</b> কালেক্টিভ নাউন হলো একদল শিক্ষার্থীকে (বা অন্য কোনো সমষ্টিকে) বোঝাতে ব্যবহৃত হয়। 'Class' বলতে একটি নির্দিষ্ট শ্রেণীতে একত্রিত শিক্ষার্থীদের সমষ্টিকে বোঝায়। তাই এটি Collective noun।</li><li><b>(D) Material noun:</b> মেটেরিয়াল নাউন হলো সেই noun যা দ্বারা কোনো পদার্থ বা উপাদানকে বোঝায় যা থেকে অন্য কিছু তৈরি হয়। 'Class' কোনো পদার্থ বা উপাদান নয়।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "Which of the following is NOT an abstract noun?",
+          options: {
+            a: "Goodness",
+            b: "Family",
+            c: "Bravery",
+            d: "Childhood",
+          },
+          correct: "b",
+          explanation:
+            "<p>Abstract noun হলো এমন একটি noun যা কোনো ধারণা, গুণ, অবস্থা বা অনুভূতিকে বোঝায়, যা আমরা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করতে পারি না। প্রশ্নটি জানতে চেয়েছে কোনটি abstract noun নয়।</p><br><p><b>ব্যাখ্যা:</b></p><ul><li><b>(A) Goodness:</b> 'Goodness' (সৃষ্টিকর্তা) একটি গুণবাচক ধারণা, যা দেখা বা স্পর্শ করা যায় না। এটি Abstract noun।</li><li><b>(B) Family:</b> 'Family' (পরিবার) হলো একদল মানুষের সমষ্টি। এটি একটি Collective noun, Abstract noun নয়। এটি এমন একটি noun যা পঞ্চ ইন্দ্রিয় দ্বারা অনুভব করা যায় (পরিবারের সদস্যদের দেখা যায়)।</li><li><b>(C) Bravery:</b> 'Bravery' (সাহসিকতা) একটি গুণবাচক ধারণা, যা দেখা বা স্পর্শ করা যায় না। এটি Abstract noun।</li><li><b>(D) Childhood:</b> 'Childhood' (শৈশব) একটি অবস্থাকে বোঝায়, যা দেখা বা স্পর্শ করা যায় না। এটি Abstract noun।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
